@@ -51,61 +51,6 @@ describe("install", function () {
     assert.strictEqual(require("./foo"), require("./foo.js"));
   });
 
-  // Load order is still the same, load one, await if needed, and then load the rest.
-  it("permits asynchronous require", async function() {
-    var install = makeInstaller();
-
-    var require = install({
-      "foo.js": async function (require, exports, module) {
-        assert.strictEqual(typeof module, "object");
-        assert.strictEqual(require(module.id), exports);
-        module.exports = {
-          ...await require("asyncAsdf"),
-          ...require("asdf"),
-        };
-        assert.strictEqual(require(module.id), module.exports);
-      },
-      node_modules: {
-        asdf: {
-          "package.json": function (require, exports, module) {
-            exports.main = "./lib";
-            assert.strictEqual(require(module.id), exports);
-          },
-          lib: {
-            "index.js": function (require, exports, module) {
-              exports.asdfMain = true;
-              assert.strictEqual(require(module.id), exports);
-            }
-          }
-        },
-        asyncAsdf: {
-          "package.json": function (require, exports, module) {
-            exports.main = "./libAsync";
-            assert.strictEqual(require(module.id), exports);
-          },
-          libAsync: {
-            "index.js": async function (require, exports, module) {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-              exports.asyncAsdfMain = true;
-              assert.strictEqual(require(module.id), exports);
-            }
-          }
-        }
-      }
-    });
-
-    assert.deepEqual(await require('./foo'), {
-      asdfMain: true,
-      asyncAsdfMain: true
-    });
-
-    assert.deepEqual(require("asdf"), {
-      asdfMain: true
-    });
-
-    assert.strictEqual(await require("./foo"), await require("./foo.js"));
-  })
-
   it("supports a variety of relative identifiers", function () {
     var install = makeInstaller();
     var value = {};

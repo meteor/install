@@ -291,17 +291,6 @@ makeInstaller = function (options) {
 
   function fileEvaluate(file, parentModule) {
     var module = file.module;
-    const runSettersAndReturn = () => {
-      // The module.runModuleSetters method will be deprecated in favor of
-      // just module.runSetters: https://github.com/benjamn/reify/pull/160
-      var runSetters = module.runSetters || module.runModuleSetters;
-      if (isFunction(runSetters)) {
-        runSetters.call(module);
-      }
-
-      return module.exports;
-    }
-
     if (! strictHasOwn(module, "exports")) {
       var contents = file.contents;
       if (! contents) {
@@ -327,23 +316,6 @@ makeInstaller = function (options) {
         }
       }
 
-      // We don't need to do anything fancy. When importing an async module, we need to wait for it
-      // to evaluate, and then evaluate the rest like usual.
-      if (contents.constructor.name === "AsyncFunction") {
-        return contents(
-            makeRequire(file),
-            // If the file had a .stub, reuse the same object for exports.
-            module.exports = file.stub || {},
-            module,
-            file.module.id,
-            file.parent.module.id
-        ).then(() => {
-          module.loaded = true;
-          return runSettersAndReturn();
-        })
-
-      }
-
       contents(
         makeRequire(file),
         // If the file had a .stub, reuse the same object for exports.
@@ -356,7 +328,14 @@ makeInstaller = function (options) {
       module.loaded = true;
     }
 
-    return runSettersAndReturn();
+    // The module.runModuleSetters method will be deprecated in favor of
+    // just module.runSetters: https://github.com/benjamn/reify/pull/160
+    var runSetters = module.runSetters || module.runModuleSetters;
+    if (isFunction(runSetters)) {
+      runSetters.call(module);
+    }
+
+    return module.exports;
   }
 
   function fileIsDirectory(file) {
