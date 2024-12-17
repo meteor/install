@@ -1198,6 +1198,37 @@ describe("install", function () {
     var result = require("./main").result;
     assert.strictEqual(result.id, "/node_modules/pkg/dist/file.js");
   });
+  it('Handle array default exports with object', () => {
+    var install = makeInstaller();
+    var require = install({
+      "main.js"(require, exports, module) {
+        debugger;
+        exports.result = require("pkg");
+      },
+      node_modules: {
+        pkg: {
+          "package.json"(require, exports, module) {
+            exports.exports = {
+              '.': [
+                {
+                  default: './dist/file.js'
+                },
+                './missing.js'
+              ]
+            }
+          },
+          dist: {
+            "file.js"(require, exports, module) {
+              exports.id = module.id;
+            }
+          }
+        }
+      }
+    });
+
+    var result = require("./main").result;
+    assert.strictEqual(result.id, "/node_modules/pkg/dist/file.js");
+  });
   it('Handle self-import', () => {
     var install = makeInstaller();
     var require = install({

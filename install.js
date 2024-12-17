@@ -527,6 +527,9 @@ makeInstaller = function (options) {
 
     function resolveTarget(key, value, patternMatch) {
       if (typeof value === 'string') {
+        if (value.indexOf('./') !== 0) {
+          throw new Error('Invalid Package Target');
+        }
         if (patternMatch === undefined) {
           return value;
         }
@@ -538,8 +541,12 @@ makeInstaller = function (options) {
       if (Array.isArray(value)) {
         var result;
         value.some(function (targetItem) {
-          return result = targetItem.indexOf('./') === 0 &&
-            resolveTarget(key, targetItem, patternMatch);
+          try {
+            return result = resolveTarget(key, targetItem, patternMatch);
+          } catch (err) {
+            if (err.message === 'Invalid Package Target') return result = undefined;
+            throw err;
+          }
         });
         return result;
       }
@@ -697,9 +704,6 @@ makeInstaller = function (options) {
   }
 
   function extractPackageName(id) {
-    // In addition to relative/absolute paths, also handle
-    // cases like "foo/", where we are importing a package, and the trailing
-    // slash is important
     if ('./'.indexOf(id.charAt(0)) > -1) {
       // Not an id for a package
       return '';
