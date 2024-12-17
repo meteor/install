@@ -988,7 +988,6 @@ describe("install", function () {
     install.fetch = function (ids) {
       if (! threw) {
         threw = true;
-        debugger;
         throw new Error("network failure, or something");
       }
 
@@ -1169,5 +1168,138 @@ describe("install", function () {
     });
 
     require("./main");
+  });
+
+  it('Handle array default exports with invalid entry', () => {
+    var install = makeInstaller();
+    var require = install({
+      "main.js"(require, exports, module) {
+        exports.result = require("pkg");
+      },
+      node_modules: {
+        pkg: {
+          "package.json"(require, exports, module) {
+            exports.exports = {
+              default: [
+                'invalid',
+                './dist/file.js'
+              ]
+            }
+          },
+          dist: {
+            "file.js"(require, exports, module) {
+              exports.id = module.id;
+            }
+          }
+        }
+      }
+    });
+
+    var result = require("./main").result;
+    assert.strictEqual(result.id, "/node_modules/pkg/dist/file.js");
+  });
+  it('Handle self-import', () => {
+    var install = makeInstaller();
+    var require = install({
+      "main.js"(require, exports, module) {
+        exports.result = require("pkg");
+      },
+      node_modules: {
+        pkg: {
+          "package.json"(require, exports, module) {
+            exports.name = "fun";
+            exports.exports = {
+              '.': './file.js',
+              './env': {
+                default: './environment.js'
+              }
+            }
+          },
+          "environment.js" (require, exports, module) {
+            module.exports = module.id;
+          },
+          "file.js"(require, exports, module) {
+            module.exports = require('fun/env');
+          }
+        }
+      }
+    });
+
+    var result = require("./main").result;
+    assert.strictEqual(result, "/node_modules/pkg/environment.js");
+  });
+  it('Handle missing package.json export', () => {
+    var install = makeInstaller();
+    var require = install({
+      a: {
+        "main.js"(require, exports, module) {
+          exports.result = require("pkg/dist/file.js");
+        },
+        node_modules: {
+          pkg: {
+            "package.json"(require, exports, module) {
+              exports.exports = './file.js';
+            },
+            dist: {
+              "file.js"(require, exports, module) {
+                exports.id = module.id;
+              }
+            }
+          }
+        }
+      },
+      node_modules: {
+        pkg: {
+          "package.json"(require, exports, module) {},
+          dist: {
+            "file.js"(require, exports, module) {
+              exports.id = module.id;
+            }
+          }
+        }
+      }
+    });
+
+    let err;
+    try {
+      require("./a/main");
+    } catch (error) {
+      err = error;
+    }
+
+    assert.strictEqual(err.message, '[ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath "./dist/file.js" is not defined by "exports" in /a/node_modules/pkg/package.json')
+  });
+  it('Check for file in parent node_modules until it exists', () => {
+    var install = makeInstaller();
+    var require = install({
+      a: {
+        "main.js"(require, exports, module) {
+          exports.result = require("pkg/src/file.js");
+        },
+        node_modules: {
+          pkg: {
+            "package.json"(require, exports, module) {},
+            dist: {
+              "file.js"(require, exports, module) {
+                exports.id = module.id;
+              }
+            }
+          }
+        }
+      },
+      node_modules: {
+        pkg: {
+          "package.json"(require, exports, module) {},
+          src: {
+            "file.js"(require, exports, module) {
+              exports.id = module.id;
+            }
+          }
+        }
+      }
+    });
+
+    var result = require("./a/main").result;
+    assert.strictEqual(result.id, "/node_modules/pkg/src/file.js");
   });
 });
