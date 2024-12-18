@@ -1170,6 +1170,28 @@ describe("install", function () {
     require("./main");
   });
 
+  it("resolves alias in package from same name as folder", () => {
+    var install = makeInstaller();
+    var require = install({
+      "main.js"(require, exports, module) {
+        exports.result = require("pkg/dist");
+      },
+      node_modules: {
+        pkg: {
+          'dist.js': 'pkg/dist/main.js',
+          dist: {
+            'main.js' (require, exports, module) {
+              module.exports = module.id;
+            }
+          }
+        }
+      }
+    });
+
+    var result = require("./main").result;
+    assert.strictEqual(result, "/node_modules/pkg/dist/main.js");
+  });
+
   it('Handle array default exports with invalid entry', () => {
     var install = makeInstaller();
     var require = install({
@@ -1202,7 +1224,6 @@ describe("install", function () {
     var install = makeInstaller();
     var require = install({
       "main.js"(require, exports, module) {
-        debugger;
         exports.result = require("pkg");
       },
       node_modules: {

@@ -632,6 +632,13 @@ makeInstaller = function (options) {
           });
         } else if (packageSubpath.indexOf('./') === 0) {
           resolved = mainFile = fileAppendId(file, packageSubpath, extensions);
+          
+          // We might need to re-check the folder again if there are aliases
+          // If we resolved to the same file, then we want to exclude this folder
+          // to avoid an infinite loop
+          if (resolved !== file) {
+            seenDirFiles.pop();
+          }
         }
 
         if (resolved && mainFile) {
