@@ -16,6 +16,7 @@ describe("install", function () {
 
   it("permits synchronous require", function () {
     var install = makeInstaller();
+    console.log("=>(run.js:19) install", install);
 
     var require = install({
       "foo.js": function (require, exports, module) {
