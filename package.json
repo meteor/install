@@ -3,9 +3,9 @@
     "name": "Ben Newman",
     "email": "bn@cs.stanford.edu"
   },
-  "name": "install",
-  "version": "0.13.0",
-  "description": "Minimal JavaScript module loader",
+  "name": "@meteorjs/install",
+  "version": "0.14.0",
+  "description": "Minimal JavaScript module loader (Meteor.js version)",
   "keywords": [
     "modules",
     "require",
@@ -36,6 +36,6 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">= 0.10"
+    "node": ">= 6.0"
   }
 }
