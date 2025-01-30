@@ -34,6 +34,7 @@ makeInstaller = function (options) {
   //   filesByModuleId[module.id] === fileAppendId(root, module.id)
   //   filesByModuleId[module.id].module === module
   var filesByModuleId = {};
+  console.log("=>(install.js:37) filesByModuleId", filesByModuleId);
 
   // The file object representing the root directory of the installed
   // module tree.
